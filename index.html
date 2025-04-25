@@ -38,7 +38,7 @@
 
         let resultText = "";
         for (let i = 0; i < prediction.length; i++) {
-          resultText += ${prediction[i].className}: ${Math.round(prediction[i].probability * 100)}%<br>;
+          resultText += `${prediction[i].className}: ${Math.round(prediction[i].probability * 100)}%<br>`;
         }
         document.getElementById("prediction").innerHTML = resultText;
       }, 1000);
