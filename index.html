@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ESP32-CAM + Teachable Machine</title>
+</head>
+<body>
+  <h1>Live Classification</h1>
+  <video id="webcam" autoplay width="320" height="240"></video>
+  <div id="prediction"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image"></script>
+  <script>
+    const URL = "https://[ТВОЙ_GITHUB].github.io/[папка_с_моделью]/";
+    let model, webcam, labelContainer, maxPredictions;
+
+    async function init() {
+      const modelURL = URL + "model.json";
+      const metadataURL = URL + "metadata.json";
+
+      model = await tmImage.load(modelURL, metadataURL);
+      maxPredictions = model.getTotalClasses();
+
+      // Подключаем ESP32-CAM видеопоток
+      const video = document.getElementById("webcam");
+      video.src = "http://ТВОЙ_IP_ESP32:81/stream"; // Поток камеры
+      video.play();
+
+      predict(video);
+    }
+
+    async function predict(video) {
+      setInterval(async () => {
+        const prediction = await model.predict(video);
+        document.getElementById("prediction").innerText = prediction[0].className + ": " + Math.round(prediction[0].probability * 100) + "%";
+      }, 1000);
+    }
+
+    init();
+  </script>
+</body>
+</html>
