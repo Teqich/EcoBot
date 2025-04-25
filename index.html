@@ -5,14 +5,14 @@
 </head>
 <body>
   <h1>Live Classification</h1>
-  <video id="webcam" autoplay width="320" height="240"></video>
+  <img id="espCam" src="http://ТВОЙ_IP_ESP32:81/stream" width="320" height="240" crossorigin="anonymous"/>
   <div id="prediction"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image"></script>
   <script>
     const URL = "https://Teqich.github.io/EcoBot/";
-    let model, webcam, labelContainer, maxPredictions;
+    let model, maxPredictions;
 
     async function init() {
       const modelURL = URL + "model.json";
@@ -21,18 +21,26 @@
       model = await tmImage.load(modelURL, metadataURL);
       maxPredictions = model.getTotalClasses();
 
-      // Подключаем ESP32-CAM видеопоток
-      const video = document.getElementById("webcam");
-      video.src = "http://192.168.229.148/"; // Поток камеры
-      video.play();
-
-      predict(video);
+      predictLoop();
     }
 
-    async function predict(video) {
+    async function predictLoop() {
+      const img = document.getElementById("espCam");
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
       setInterval(async () => {
-        const prediction = await model.predict(video);
-        document.getElementById("prediction").innerText = prediction[0].className + ": " + Math.round(prediction[0].probability * 100) + "%";
+        // Захват изображения с ESP32 потока
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0, img.width, img.height);
+        const prediction = await model.predict(canvas);
+
+        let resultText = "";
+        for (let i = 0; i < prediction.length; i++) {
+          resultText += ${prediction[i].className}: ${Math.round(prediction[i].probability * 100)}%<br>;
+        }
+        document.getElementById("prediction").innerHTML = resultText;
       }, 1000);
     }
 
