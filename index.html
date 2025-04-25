@@ -23,7 +23,7 @@
 
       // Подключаем ESP32-CAM видеопоток
       const video = document.getElementById("webcam");
-      video.src = "http://ТВОЙ_IP_ESP32:81/stream"; // Поток камеры
+      video.src = "http://192.168.229.148/"; // Поток камеры
       video.play();
 
       predict(video);
