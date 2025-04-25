@@ -1,11 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ESP32-CAM + Teachable Machine</title>
 </head>
 <body>
   <h1>Live Classification</h1>
-  <img id="espCam" src="http://192.168.229.148/" width="320" height="240" crossorigin="anonymous"/>
+  <img id="espCam" src="http://192.168.229.148/" width="320" height="240" crossorigin="anonymous" />
   <div id="prediction"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
@@ -15,13 +17,20 @@
     let model, maxPredictions;
 
     async function init() {
-      const modelURL = URL + "model.json";
-      const metadataURL = URL + "metadata.json";
+      try {
+        const modelURL = URL + "model.json";
+        const metadataURL = URL + "metadata.json";
 
-      model = await tmImage.load(modelURL, metadataURL);
-      maxPredictions = model.getTotalClasses();
+        // Загрузка модели Teachable Machine
+        model = await tmImage.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
 
-      predictLoop();
+        console.log("Model loaded successfully!");
+        predictLoop();
+      } catch (error) {
+        console.error("Error loading model:", error);
+        document.getElementById("prediction").innerHTML = "Error loading model. Please check console.";
+      }
     }
 
     async function predictLoop() {
@@ -30,18 +39,27 @@
       const ctx = canvas.getContext("2d");
 
       setInterval(async () => {
-        // Захват изображения с ESP32 потока
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0, img.width, img.height);
-        const prediction = await model.predict(canvas);
+        if (img.complete) { // Проверка на загрузку изображения
+          // Захват изображения с ESP32 потока
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0, img.width, img.height);
 
-        let resultText = "";
-        for (let i = 0; i < prediction.length; i++) {
-          resultText += `${prediction[i].className}: ${Math.round(prediction[i].probability * 100)}%<br>`;
+          try {
+            // Предсказание
+            const prediction = await model.predict(canvas);
+            let resultText = "";
+            for (let i = 0; i < prediction.length; i++) {
+              resultText += `${prediction[i].className}: ${Math.round(prediction[i].probability * 100)}%<br>`;
+            }
+            document.getElementById("prediction").innerHTML = resultText;
+          } catch (predictError) {
+            console.error("Prediction error:", predictError);
+          }
+        } else {
+          console.log("Waiting for image to load...");
         }
-        document.getElementById("prediction").innerHTML = resultText;
-      }, 1000);
+      }, 1000); // Повторное предсказание каждую секунду
     }
 
     init();
